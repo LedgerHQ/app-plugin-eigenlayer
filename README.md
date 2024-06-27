@@ -63,3 +63,6 @@ Ledger's recommended [plugin guide](https://developers.ledger.com/docs/dapp/embe
 6. On the "Ledger Dev Tools" side bar, Select a target and then click on Build. 
 7. Once build is complete, click on "Run tests" to run the tests
 
+## How to test
+
+More info on how to run the tests [here](https://github.com/Zondax/ledger-plugin-eigenlayer/blob/main/tests/README.md).
