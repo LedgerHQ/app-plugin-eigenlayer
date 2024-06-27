@@ -1,5 +1,13 @@
 #include "plugin.h"
 
+/**
+ * @brief Compare two addresses
+ *
+ * @param a: first address
+ * @param b: second address
+ *
+ * @return true if the addresses are the same
+ */
 bool compare_addresses(const char a[ADDRESS_STR_LEN], const char b[ADDRESS_STR_LEN]) {
     for (size_t i = 0; i < ADDRESS_STR_LEN; i += 1) {
         if (tolower((unsigned char) a[i]) != tolower((unsigned char) b[i])) {
@@ -9,6 +17,14 @@ bool compare_addresses(const char a[ADDRESS_STR_LEN], const char b[ADDRESS_STR_L
     return true;
 }
 
+/**
+ * @brief If address is a known erc20 token, update display context with its name
+ * otherwise set it to unkwown (UNKNOWN_ERC20)
+ *
+ * @param address: address to compare
+ *
+ * @returns index of the erc20 in the context or UNKNOWN_ERC20 if not found
+ */
 uint8_t decode_token(const char address[ADDRESS_STR_LEN]) {
     for (size_t i = 0; i < STRATEGIES_COUNT; i++) {
         if (compare_addresses(address, token_addresses[i])) {
@@ -18,6 +34,14 @@ uint8_t decode_token(const char address[ADDRESS_STR_LEN]) {
     return UNKNOWN_TOKEN;
 }
 
+/**
+ * @brief If address is a known strategy, update display context with its name
+ * otherwise set it to unkwown (UNKNOWN_STRATEGY)
+ *
+ * @param address: address to compare
+ *
+ * @returns index of the erc20 in the context or UNKNOWN_STRATEGY if not found
+ */
 uint8_t decode_strategy(const char address[ADDRESS_STR_LEN]) {
     for (size_t i = 0; i < STRATEGIES_COUNT; i++) {
         if (compare_addresses(address, strategy_addresses[i])) {
@@ -27,6 +51,13 @@ uint8_t decode_strategy(const char address[ADDRESS_STR_LEN]) {
     return UNKNOWN_STRATEGY;
 }
 
+/**
+ * @brief Handle the parameters for the depositIntoStrategy selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context to update
+ *
+ */
 static void handle_deposit_into_strategy(ethPluginProvideParameter_t *msg, context_t *context) {
     uint8_t buffer[ADDRESS_LENGTH] = {0};
     char address[ADDRESS_STR_LEN] = {0};
@@ -34,13 +65,19 @@ static void handle_deposit_into_strategy(ethPluginProvideParameter_t *msg, conte
     switch (context->next_param) {
         case STRATEGY:
             copy_address(buffer, msg->parameter, sizeof(buffer));
-            getEthDisplayableAddress(buffer, address, sizeof(address), 0);
+            if (!getEthDisplayableAddress(buffer, address, sizeof(address), 0)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
             context->tx.deposit_into_strategy.strategy = decode_strategy(address);
             context->next_param = TOKEN;
             break;
         case TOKEN:
             copy_address(buffer, msg->parameter, sizeof(buffer));
-            getEthDisplayableAddress(buffer, address, sizeof(address), 0);
+            if (!getEthDisplayableAddress(buffer, address, sizeof(address), 0)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
             context->tx.deposit_into_strategy.token = decode_token(address);
             context->next_param = AMOUNT;
             break;
@@ -57,6 +94,13 @@ static void handle_deposit_into_strategy(ethPluginProvideParameter_t *msg, conte
     }
 }
 
+/**
+ * @brief Handle the parameters for the undelegate selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context to update
+ *
+ */
 static void handle_undelegate(ethPluginProvideParameter_t *msg, context_t *context) {
     switch (context->next_param) {
         case STAKER:
@@ -72,6 +116,13 @@ static void handle_undelegate(ethPluginProvideParameter_t *msg, context_t *conte
     }
 }
 
+/**
+ * @brief Handle the parameters for the delegate selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context to update
+ *
+ */
 static void handle_delegate(ethPluginProvideParameter_t *msg, context_t *context) {
     uint16_t offset = 0;
     switch (context->next_param) {
@@ -129,6 +180,13 @@ static void handle_delegate(ethPluginProvideParameter_t *msg, context_t *context
     }
 }
 
+/**
+ * @brief Handle the parameters for the queuedWithdrawal selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context to update
+ *
+ */
 static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t *context) {
     queue_withdrawal_t *tx = &context->tx.queue_withdrawal;
     switch (context->next_param) {
@@ -237,7 +295,10 @@ static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t 
         }
         case SHARES_OFFSET:
             // we can only check this value once we know strategies array length
-            U2BE_from_parameter(msg->parameter, &tx->shares_array_offset);
+            if (!U2BE_from_parameter(msg->parameter, &tx->shares_array_offset)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
 
             context->next_param = WITHDRAWER;
             break;
@@ -246,7 +307,10 @@ static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t 
                 uint8_t buffer[ADDRESS_LENGTH];
                 copy_address(buffer, msg->parameter, sizeof(buffer));
                 char address_buffer[ADDRESS_STR_LEN];
-                getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0);
+                if (!getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0)) {
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+                }
                 // we only support same withdrawer accross all the withdrawals
                 if (tx->withdrawer[0] == '\0') {
                     memcpy(tx->withdrawer, address_buffer, sizeof(tx->withdrawer));
@@ -297,7 +361,10 @@ static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t 
                 uint8_t buffer[ADDRESS_LENGTH];
                 copy_address(buffer, msg->parameter, sizeof(buffer));
                 char address_buffer[ADDRESS_STR_LEN];
-                getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0);
+                if (!getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0)) {
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+                }
 
                 uint8_t strategy_index = decode_strategy(address_buffer);
                 tx->strategies[tx->strategies_count] =
@@ -308,7 +375,9 @@ static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t 
 
             // we just processed one strategy item
             tx->strategies_count += 1;
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 // when we arrive at the end of the strategies array we go to the shares array
                 context->next_param = SHARES_SIZE;
@@ -354,6 +423,13 @@ static void handle_queue_withdrawal(ethPluginProvideParameter_t *msg, context_t 
     }
 }
 
+/**
+ * @brief Handle the parameters for the completeQueuedWithdrawals selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context to update
+ *
+ */
 static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                                                context_t *context) {
     complete_queued_withdrawals_t *tx = &context->tx.complete_queued_withdrawals;
@@ -406,7 +482,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
             break;
         case WITHDRAWALS_ITEM_OFFSET: {
             uint16_t offset;
-            U2BE_from_parameter(msg->parameter, &offset);
+            if (!U2BE_from_parameter(msg->parameter, &offset)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
 
             // We have limited size on the context and can't store all the offset values
             // of the Withdrawal structs. So we compute their checksum and expect to
@@ -429,7 +508,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 return;
             }
 
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 context->next_param = STAKER;
             }
@@ -547,7 +628,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 uint8_t buffer[ADDRESS_LENGTH];
                 copy_address(buffer, msg->parameter, sizeof(buffer));
                 char address_buffer[ADDRESS_STR_LEN];
-                getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0);
+                if (!getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0)) {
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+                }
 
                 uint8_t strategy_index = decode_strategy(address_buffer);
                 if (tx->strategies_count >= MAX_DISPLAYABLE_STRATEGIES) {
@@ -570,7 +654,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
 
             // we just processed one strategy item
             tx->strategies_count += 1;
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 // when we arrive at the end of the strategies array we go to the shares
                 // array
@@ -605,7 +691,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
         case SHARE:
             // we don't need to parse shares items as they are not needed for clearsigning
             // as not having ETH / ERC20 amount to display would confuse users
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 // we arrive at the end of the Withdrawal struct
                 tx->parent_item_count -= 1;
@@ -692,7 +780,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 }
             }
 
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 context->next_param = TOKENS_ITEM_SIZE;
             }
@@ -718,7 +808,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 }
             }
 
-            U2BE_from_parameter(msg->parameter, &tx->current_item_count);
+            if (!U2BE_from_parameter(msg->parameter, &tx->current_item_count)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
 
             if (tx->parent_item_count == 1) {
                 // if we are on the last item of the array of tokens struct
@@ -745,7 +838,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 uint8_t buffer[ADDRESS_LENGTH];
                 copy_address(buffer, msg->parameter, sizeof(buffer));
                 char address_buffer[ADDRESS_STR_LEN];
-                getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0);
+                if (!getEthDisplayableAddress(buffer, address_buffer, sizeof(address_buffer), 0)) {
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+                }
 
                 uint8_t token_index = decode_token(address_buffer);
                 // we check if the token matches the corresponding strategy
@@ -761,7 +857,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 tx->tokens_count += 1;
             }
 
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 // we arrive at the end of the tokens array
                 tx->parent_item_count -= 1;
@@ -785,7 +883,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 return;
             }
 
-            U2BE_from_parameter(msg->parameter, &tx->current_item_count);
+            if (!U2BE_from_parameter(msg->parameter, &tx->current_item_count)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
             if (tx->current_item_count > tx->withdrawals_count) {
                 PRINTF("Unexpected middlewareTimesIndexes parameter length %d > withdrawals %d\n ",
                        tx->current_item_count,
@@ -801,7 +902,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
             }
             break;
         case MIDDLEWARE_TIMES_ITEM:
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 context->next_param = RECEIVE_AS_TOKEN_SIZE;
             }
@@ -816,7 +919,10 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
                 return;
             }
 
-            U2BE_from_parameter(msg->parameter, &tx->current_item_count);
+            if (!U2BE_from_parameter(msg->parameter, &tx->current_item_count)) {
+                msg->result = ETH_PLUGIN_RESULT_ERROR;
+                return;
+            }
             if (tx->current_item_count > tx->withdrawals_count) {
                 PRINTF("Unexpected receiveAsTokens length %d > withdrawals length %d\n",
                        tx->current_item_count,
@@ -835,7 +941,9 @@ static void handle_complete_queued_withdrawals(ethPluginProvideParameter_t *msg,
             }
             break;
         case RECEIVE_AS_TOKEN_ITEM: {
-            tx->current_item_count -= 1;
+            if (tx->current_item_count > 0) {
+                tx->current_item_count -= 1;
+            }
             if (tx->current_item_count == 0) {
                 // reached the end
                 context->next_param = NONE;
