@@ -1,7 +1,18 @@
 #include "plugin.h"
 
-// Set UI for any address screen.
+/**
+ * @brief Set UI for any address screen.
+ *
+ * @param msg: message containing the parameter
+ * @param value: address to show
+ *
+ */
 static bool set_address_ui(ethQueryContractUI_t *msg, address_t *value) {
+    if (msg->msgLength < 42) {
+        msg->result = ETH_PLUGIN_RESULT_ERROR;
+        return false;
+    }
+
     // Prefix the address with `0x`.
     msg->msg[0] = '0';
     msg->msg[1] = 'x';
@@ -23,6 +34,14 @@ static bool set_addr_ui(ethQueryContractUI_t *msg, address_t *address, const cha
     return set_address_ui(msg, address);
 }
 
+/**
+ * @brief UI for depositIntoStrategy selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context with provide_parameter data
+ * @param screenIndex: index of the screen to display
+ *
+ */
 static bool handle_deposit_into_strategy(ethQueryContractUI_t *msg,
                                          context_t *context,
                                          uint8_t screenIndex) {
@@ -54,6 +73,14 @@ static bool handle_deposit_into_strategy(ethQueryContractUI_t *msg,
     }
 }
 
+/**
+ * @brief UI for queueWithdrawal selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context with provide_parameter data
+ * @param screenIndex: index of the screen to display
+ *
+ */
 static bool handle_queue_withdrawal(ethQueryContractUI_t *msg,
                                     context_t *context,
                                     uint8_t screenIndex) {
@@ -76,6 +103,9 @@ static bool handle_queue_withdrawal(ethQueryContractUI_t *msg,
                 if (strategy == UNKNOWN_STRATEGY) {
                     strlcpy(msg->msg, "UNKNOWN", msg->msgLength);
                 } else {
+                    if (strategy > STRATEGIES_COUNT) {
+                        return false;
+                    }
                     strlcpy(msg->msg, tickers[strategy], msg->msgLength);
                 }
             }
@@ -87,6 +117,14 @@ static bool handle_queue_withdrawal(ethQueryContractUI_t *msg,
     }
 }
 
+/**
+ * @brief UI for completeQueuedWithdrawals selector
+ *
+ * @param msg: message containing the parameter
+ * @param context: context with provide_parameter data
+ * @param screenIndex: index of the screen to display
+ *
+ */
 static bool handle_complete_queued_withdrawals(ethQueryContractUI_t *msg,
                                                context_t *context,
                                                uint8_t screenIndex) {

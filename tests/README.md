@@ -24,6 +24,7 @@ Example of the correct file tree with Ethereum compiled for all targets.
 * `tests/.test_dependencies/ethereum/build/nanox/bin/app.elf`
 * `tests/.test_dependencies/ethereum/build/stax/bin/app.elf`
 
+The Etheruem binaries should be compiled with the flag CAL_TEST_KEY=1.
 The first method is to use the Ledger VSCode extension to automatically manage dependencies
 The second method is to go in the Ethereum project, compile the application, and dispatch the `build/` output directory.
 A third method is to re-use the Ethereum build used in the CI, and available as artifact. 
