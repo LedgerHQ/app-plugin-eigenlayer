@@ -11,7 +11,7 @@ _Please visit our website at [zondax.ch](https://www.zondax.ch)_
 
 This is a plugin for the Ethereum application which helps parsing and displaying relevant information when signing a EigenLayer smart contract.
 
-- Ledger Nano S/S+/X/Stax EigenLayer plugin
+- Ledger Nano S/S+/X/Stax/Flex EigenLayer plugin
 - Specs / Documentation
 - Ragger tests
 
