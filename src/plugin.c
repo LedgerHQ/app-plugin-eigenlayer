@@ -33,7 +33,8 @@ const char strategy_addresses[STRATEGIES_COUNT][ADDRESS_STR_LEN] = {
     "0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6",  // swETH
     "0x7CA911E83dabf90C90dD3De5411a10F1A6112184",  // wBETH
     "0x8CA7A5d6f3acd3A7A8bC468a8CD0FB14B6BD28b6",  // sfrxETH
-    "0x298aFB19A105D59E74658C4C334Ff360BadE6dd2"   // mETH
+    "0x298aFB19A105D59E74658C4C334Ff360BadE6dd2",  // mETH
+    "0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7"   // EIGEN
 };
 
 const char token_addresses[STRATEGIES_COUNT][ADDRESS_STR_LEN] = {
@@ -48,6 +49,7 @@ const char token_addresses[STRATEGIES_COUNT][ADDRESS_STR_LEN] = {
     "0xa2E3356610840701BDf5611a53974510Ae27E2e1",  // wBETH
     "0xac3E018457B222d93114458476f3E3416Abbe38F",  // sfrxETH
     "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",  // mETH
+    "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83"   // EIGEN
 };
 
 const char tickers[STRATEGIES_COUNT][MAX_TICKER_LEN] = {"cbETH",
@@ -60,4 +62,5 @@ const char tickers[STRATEGIES_COUNT][MAX_TICKER_LEN] = {"cbETH",
                                                         "swETH",
                                                         "wBETH",
                                                         "sfrxETH",
-                                                        "mETH"};
+                                                        "mETH",
+                                                        "EIGEN"};

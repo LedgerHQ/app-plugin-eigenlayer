@@ -49,7 +49,7 @@ typedef enum selector_e {
 // Do not modify !
 extern const uint32_t SELECTORS[SELECTOR_COUNT];
 
-#define STRATEGIES_COUNT           11
+#define STRATEGIES_COUNT           12
 #define UNKNOWN_TOKEN              15
 #define UNKNOWN_STRATEGY           15
 #define ERC20_DECIMALS             18
